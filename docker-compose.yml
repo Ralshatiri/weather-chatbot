@@ -1,19 +1,14 @@
 services:
   adk-chatbot:
-    build:
-      context: .
-      dockerfile: Dockerfile.chatbot
+    image: raalshat21/weather-chatbot:v2
 
     container_name: adk-weather-chatbot
 
     env_file:
       - .env
 
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-    ports:
-      - "8001:8000"
+    expose:
+      - "8000"
 
     restart: unless-stopped
 
@@ -25,8 +20,8 @@ services:
         - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 20s
+      retries: 5
+      start_period: 30s
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main

@@ -1,6 +1,4 @@
-
 import json
-import os
 import re
 import time
 import uuid
@@ -15,19 +13,13 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from pydantic import BaseModel
 
+from config import CHATBOT_API_KEY
 from myChatbot.agent import root_agent
 from myChatbot.tools import close_tool_connections
-from config import CHATBOT_API_KEY
 
 
 MODEL_ID = "weather-assistant"
 
-
-
-
-# -------------------------------------------------------------------
-# ADK setup
-# -------------------------------------------------------------------
 
 session_service = InMemorySessionService()
 
@@ -38,15 +30,9 @@ runner = Runner(
 )
 
 
-# -------------------------------------------------------------------
-# Application setup
-# -------------------------------------------------------------------
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-
-    # Close the shared HTTP client and database pool from tools.py.
     await close_tool_connections()
 
 
@@ -64,10 +50,6 @@ app.add_middleware(
 )
 
 
-# -------------------------------------------------------------------
-# Request models
-# -------------------------------------------------------------------
-
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str
@@ -80,18 +62,7 @@ class ChatCompletionRequest(BaseModel):
     user: str | None = None
 
 
-
-# -------------------------------------------------------------------
-# Helper functions
-# -------------------------------------------------------------------
-
-def verify_api_key(
-    authorization: str | None,
-) -> None:
-    """
-    Verify the Bearer token sent by Open WebUI.
-    """
-
+def verify_api_key(authorization: str | None):
     if not CHATBOT_API_KEY:
         return
 
@@ -107,11 +78,7 @@ def verify_api_key(
 def safe_identifier(
     value: str,
     prefix: str,
-) -> str:
-    """
-    Convert an external identifier into a safe ADK identifier.
-    """
-
+):
     cleaned = re.sub(
         r"[^a-zA-Z0-9_-]",
         "-",
@@ -129,31 +96,26 @@ def safe_identifier(
 async def ensure_session(
     user_id: str,
     session_id: str,
-) -> None:
-    """
-    Create an ADK session if it does not already exist.
-    """
+):
+    session = await session_service.get_session(
+        app_name=root_agent.name,
+        user_id=user_id,
+        session_id=session_id,
+    )
 
-    try:
+    if session is None:
         await session_service.create_session(
             app_name=root_agent.name,
-            session_id=session_id,
             user_id=user_id,
+            session_id=session_id,
         )
-    except Exception:
-        # The session most likely already exists.
-        pass
 
 
 async def run_agent(
     message: str,
     user_id: str,
     session_id: str,
-) -> str:
-    """
-    Send one user message to the ADK root agent.
-    """
-
+):
     await ensure_session(
         user_id=user_id,
         session_id=session_id,
@@ -190,10 +152,6 @@ async def run_agent(
     return final_reply
 
 
-# -------------------------------------------------------------------
-# Basic endpoints
-# -------------------------------------------------------------------
-
 @app.get("/")
 async def root():
     return {
@@ -209,18 +167,10 @@ async def health():
     }
 
 
-# -------------------------------------------------------------------
-# OpenAI-compatible endpoints for Open WebUI
-# -------------------------------------------------------------------
-
 @app.get("/v1/models")
 async def list_models(
     authorization: str | None = Header(default=None),
 ):
-    """
-    Tell Open WebUI which chatbot model is available.
-    """
-
     verify_api_key(authorization)
 
     return {
@@ -243,10 +193,6 @@ async def chat_completions(
     x_openwebui_chat_id: str | None = Header(default=None),
     x_openwebui_user_id: str | None = Header(default=None),
 ):
-    """
-    Receive OpenAI-compatible requests from Open WebUI.
-    """
-
     verify_api_key(authorization)
 
     if request.model != MODEL_ID:
@@ -267,9 +213,6 @@ async def chat_completions(
             detail="A user message is required.",
         )
 
-    # Open WebUI sends the full conversation history.
-    # ADK already maintains its own session history, so send only
-    # the latest user message to avoid duplicating the conversation.
     latest_message = user_messages[-1]
 
     user_id = safe_identifier(
@@ -328,14 +271,7 @@ def create_streaming_response(
     reply: str,
     completion_id: str,
     created_at: int,
-) -> StreamingResponse:
-    """
-    Return the completed ADK response using OpenAI's SSE format.
-
-    ADK finishes processing before this begins, so this is response
-    compatibility rather than token-by-token ADK streaming.
-    """
-
+):
     async def event_generator():
         content_chunk = {
             "id": completion_id,
@@ -380,4 +316,3 @@ def create_streaming_response(
             "Connection": "keep-alive",
         },
     )
-

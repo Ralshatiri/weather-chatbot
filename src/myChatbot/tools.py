@@ -54,7 +54,7 @@ def make_json_safe(value):
         return [make_json_safe(item) for item in value]
 
     return value
-def get_weather_schema() -> dict:
+def get_weather_schema() :
     """
     Return the columns and types of the predictions table.
 
@@ -108,7 +108,7 @@ def get_weather_schema() -> dict:
         }
 
 
-def query_weather_db(sql: str) -> dict:
+def query_weather_db(sql: str):
     """
     Execute a read-only query against stored weather forecasts.
 
@@ -182,8 +182,6 @@ def query_weather_db(sql: str) -> dict:
         }
 
     except Exception as exc:
-        # Keep the real error in server logs, but do not expose it
-        # to the agent or user.
         print(f"[query_weather_db ERROR] {exc}")
 
         return {
@@ -198,7 +196,7 @@ def query_weather_db(sql: str) -> dict:
 async def predict_single(
     city: str,
     forecast_days: int,
-) -> dict:
+):
     """
     Request a new forecast for one Saudi city.
 
@@ -270,7 +268,7 @@ async def predict_single(
 
 async def predict_batch(
     requests: list[dict],
-) -> dict:
+):
     """
     Request new forecasts for multiple Saudi cities.
 
@@ -365,7 +363,7 @@ async def predict_batch(
 
 async def get_forecast_result(
     job_id: str,
-) -> dict:
+):
     """
     Retrieve the result of a queued forecast job.
 
@@ -432,7 +430,7 @@ async def get_forecast_result(
 
 async def wait_for_forecast(
     seconds: int = 4,
-) -> dict:
+):
     """
     Pause before checking a queued forecast again.
 
@@ -456,7 +454,7 @@ async def wait_for_forecast(
     }
 
 
-async def close_tool_connections() -> None:
+async def close_tool_connections():
     """
     Close shared HTTP and database resources during application shutdown.
     """
