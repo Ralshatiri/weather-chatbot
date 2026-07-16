@@ -1,0 +1,8 @@
+fastapi
+google-adk
+google-genai
+httpx
+psycopg2-binary
+python-dotenv
+sqlalchemy
+uvicorn[standard]

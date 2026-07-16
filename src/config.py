@@ -22,6 +22,11 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
 
+ADK_DB_USER = os.getenv("ADK_DB_USER")
+ADK_DB_PASSWORD = os.getenv("ADK_DB_PASSWORD")
+CHATBOT_API_KEY = os.getenv("CHATBOT_API_KEY")
+FORECAST_API_URL=os.getenv("FORECAST_API_URL")
+
 required_vars = {
     "POSTGRES_USER": POSTGRES_USER,
     "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
@@ -40,6 +45,11 @@ DB_CONN = (
     f"@{DB_HOST}:{DB_PORT}/{POSTGRES_DB}"
 )
 
+
+ADK_DB_CONN = (
+    f"postgresql://{ADK_DB_USER}:{ADK_DB_PASSWORD}"
+    f"@{DB_HOST}:{DB_PORT}/{POSTGRES_DB}"
+)
 # ---------- Redis ----------
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT"))
