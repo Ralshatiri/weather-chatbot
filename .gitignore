@@ -1,5 +1,14 @@
 .env
+.env.*
+
 __pycache__/
-model/
+*.py[cod]
+
 .venv/
-data/
+venv/
+
+src/myChatbot/.adk/
+
+*.db
+*.sqlite
+*.sqlite3

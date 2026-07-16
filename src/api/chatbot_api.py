@@ -1,8 +1,3 @@
-# Development:
-# uvicorn api.chatbot_api:app --reload
-#
-# Docker:
-# uvicorn api.chatbot_api:app --host 0.0.0.0 --port 8000
 
 import json
 import os
@@ -22,7 +17,7 @@ from pydantic import BaseModel
 
 from myChatbot.agent import root_agent
 from myChatbot.tools import close_tool_connections
-from config import CHATBOT_API_KEY,FORECAST_API_URL
+from config import CHATBOT_API_KEY
 
 
 MODEL_ID = "weather-assistant"

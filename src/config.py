@@ -1,65 +1,60 @@
 import os
+from urllib.parse import quote_plus
+
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
-# ---------- S3 ----------
-S3_BUCKET = os.getenv("MODEL_S3_BUCKET")
-RAW_DATA_S3_KEY = os.getenv("RAW_DATA_S3_KEY")
-MODEL_S3_KEY = os.getenv("MODEL_S3_KEY")
 
-# ---------- Model ----------
-MODEL_DIR = os.getenv("MODEL_DIR", "model")
-MODEL_PATH = os.getenv(
-    "Model_path",
-    os.path.join(MODEL_DIR, "xgboost_model.joblib")
-)
+# -------------------------------------------------------------------
+# Chatbot 
+# -------------------------------------------------------------------
+CHATBOT_API_KEY = os.getenv("CHATBOT_API_KEY")
 
-# ---------- Database ----------
-POSTGRES_USER = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
+# -------------------------------------------------------------------
+# Forecast API
+# -------------------------------------------------------------------
+FORECAST_API_URL = os.getenv("FORECAST_API_URL")
+
+
+# Read-only forecast database
+# -------------------------------------------------------------------
 
 ADK_DB_USER = os.getenv("ADK_DB_USER")
 ADK_DB_PASSWORD = os.getenv("ADK_DB_PASSWORD")
-CHATBOT_API_KEY = os.getenv("CHATBOT_API_KEY")
-FORECAST_API_URL=os.getenv("FORECAST_API_URL")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT", "5432")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+
 
 required_vars = {
-    "POSTGRES_USER": POSTGRES_USER,
-    "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
+    "ADK_DB_USER": ADK_DB_USER,
+    "ADK_DB_PASSWORD": ADK_DB_PASSWORD,
     "DB_HOST": DB_HOST,
     "DB_PORT": DB_PORT,
     "POSTGRES_DB": POSTGRES_DB,
+    "FORECAST_API_URL": FORECAST_API_URL,
 }
 
-missing = [name for name, value in required_vars.items() if not value]
+missing_vars = [
+    name
+    for name, value in required_vars.items()
+    if not value
+]
 
-if missing:
-    raise ValueError(f"Missing required environment variables: {missing}")
+if missing_vars:
+    raise ValueError(
+        "Missing required environment variables: "
+        + ", ".join(missing_vars)
+    )
 
-DB_CONN = (
-    f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
-    f"@{DB_HOST}:{DB_PORT}/{POSTGRES_DB}"
-)
 
+# Encode special characters that may appear in database credentials.
+encoded_user = quote_plus(ADK_DB_USER)
+encoded_password = quote_plus(ADK_DB_PASSWORD)
 
 ADK_DB_CONN = (
-    f"postgresql://{ADK_DB_USER}:{ADK_DB_PASSWORD}"
+    f"postgresql://{encoded_user}:{encoded_password}"
     f"@{DB_HOST}:{DB_PORT}/{POSTGRES_DB}"
 )
-# ---------- Redis ----------
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = int(os.getenv("REDIS_PORT"))
-REDIS_DB = int(os.getenv("REDIS_DB"))
-REDIS_TTL_SECONDS = int(os.getenv("REDIS_TTL_SECONDS"))
-
-# ---------- RabbitMQ ----------
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
-RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT"))
-RABBITMQ_USER = os.getenv("RABBITMQ_USER")
-RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
-RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE")
-JOB_TTL_SECONDS = int(os.getenv("JOB_TTL_SECONDS"))

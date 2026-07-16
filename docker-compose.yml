@@ -1,58 +1,49 @@
 services:
-  database:
-    image: postgres:16-alpine
+  adk-chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.chatbot
+
+    container_name: adk-weather-chatbot
+
     env_file:
       - .env
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     ports:
-      - "5432:5432"
+      - "8001:8000"
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+
+    container_name: open-webui
+
+    depends_on:
+      adk-chatbot:
+        condition: service_healthy
+
+    ports:
+      - "3000:8080"
+
     volumes:
-    # Stores PostgreSQL data permanently, so data is not lost when the container stops
-      - postgres_data:/var/lib/postgresql/data
-    # Runs SQL initialization files from the local ./sql folder
+      - open-webui-data:/app/backend/data
 
-      - ./sql:/docker-entrypoint-initdb.d
-
-  redis:
-    image: redis:6-alpine
-    ports:
-      - "6379:6379"
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-      
-  pipeline:
-    image: raalshat21/weather-image:v1
-    depends_on:
-      - database
-    env_file:
-      - .env
-    command: python -m src.run_pipeline
-  prediction:
-    image: raalshat21/weather-image:v1
-    depends_on:
-      - redis
-      - rabbitmq
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
-    command: uvicorn src.api.prediction:app --host 0.0.0.0 --port 8000
-
-  worker:
-    image: raalshat21/weather-image:v1
-    depends_on:
-        - database
-        - redis
-        - rabbitmq
-    env_file:
-      - .env
-    volumes:
-      - ./model:/app/model
-    command: python -m src.worker.prediction_worker  
-
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  open-webui-data:
