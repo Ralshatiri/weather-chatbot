@@ -1,0 +1,44 @@
+services:
+  adk-chatbot:
+    image: raalshat21/weather-chatbot:v2
+
+    container_name: adk-weather-chatbot
+
+    env_file:
+      - .env
+
+    expose:
+      - "8000"
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+
+    container_name: open-webui
+
+    depends_on:
+      adk-chatbot:
+        condition: service_healthy
+
+    ports:
+      - "3000:8080"
+
+    volumes:
+      - open-webui-data:/app/backend/data
+
+    restart: unless-stopped
+
+volumes:
+  open-webui-data:
